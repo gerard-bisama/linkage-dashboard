@@ -1,0 +1,344 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<title>Linkages Dashboard</title>
+
+	<!-- CSS (load bootstrap from a CDN) -->
+	<script src="/js/jquery-2.0.3.min.js"> </script>
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+	<link rel="stylesheet" href="/css/bootstrap-theme.css">
+	<script src="/js/bootstrap.min.js"> </script>
+	<link rel="stylesheet" href="/css/lmisstyle.css">
+	
+	<style>
+		#logout_box {
+		  float:right;
+		  margin-right: 14px;
+		  margin-top: 13px;
+		}
+		#buttonLoadFlow {
+		  float:right;
+		  margin-right: 14px;
+		}
+		body    { padding-top:50px; }
+		.form-control
+		{
+			width:90%;
+		}
+		#pageTitle
+		{
+			text-align:center;
+		}
+		.container {
+			/*width: 553px;*/
+			width: 80%;
+		}
+		table {
+			border-collapse: collapse;
+			margin-bottom:5px;
+
+		}
+
+		table, th, td {
+			border: 1px solid black;
+		}
+		#flowQuestionContent{
+			margin-top:20px;
+		}
+		table td{
+			padding:5px;
+		}
+		.btn {
+			float:right;
+		}
+		#infosection
+		{
+			margin-top:35px;
+			color:blue;
+		}
+	</style>
+<script type="text/javascript">
+	/*
+	$(document).ready(function() {
+		$('#buttonLoadFlow').click(function() {
+			console.log("Enter....");
+			$('#flowContent').html('<h4> Loading flows ....</h4>');
+			//console.log($('#source_select').val());
+			$.ajax({
+				url: "http://localhost:8084/listflows",
+				data: {
+					token: $('#source_select').val()
+				},
+				dataType: "json"
+			}).done(function(flows) {
+				//console.log(flows);
+				var emptyJSON=JSON.stringify(new Object());
+				if(JSON.stringify(flows)==emptyJSON)
+				{
+					$('#flowContent').html('');
+				}
+				else
+				{
+					$('#flowContent').html('<select  id="flow_select" name="flow_select" class="form-control"></select>');
+					$.each(flows, function(index, flow) {
+						$('#flowContent select').append('<option value="'+flow.uuid+'">'+flow.name+'</option>');
+					});
+					$('#flowContent').append('<button type="submit" class="btn btn-default" id="buttonLoadFlowQuestions">Load questions</button>');
+					//$('#buttonLoadFlowQuestions').attr("disabled","disabled");
+				}
+				
+			}).error(function(err){
+				$('#flowContent').html('<p>'+err+'</p>');
+				});
+			return false;
+		});//end button click function
+		
+	});
+	$(document).ready(function() {
+		$("#buttonLoadFlowQuestions").click(function(){
+			$('#flowQuestionContent').html('<h4> Loading flows questions ....</h4>'); 
+			console.log("Enter function 2.....");
+			$.ajax({
+				url: "http://localhost:8084/getquestions",
+				data: {
+					token: $('#source_select').val(),
+					flowUUID:$('#flow_select').val()
+				},
+				dataType: "json"
+			}).done(function(questions) {
+				//console.log(flows);
+				var emptyJSON=JSON.stringify(new Object());
+				if(JSON.stringify(questions)==emptyJSON)
+				{
+					$('#flowQuestionContent').html('');
+				}
+				else
+				{
+					$('#flowQuestionContent').html('<table><thead><tr><th>Flow questions</th><th>Standardized questions</th></tr></table>');
+					var indexQuestion=1;
+					$.each(questions, function(index, question) {
+						var stringDataTable='<tr data-id='+question.id+'><td>' + question.msg + '</td><td>'+'<select  id=standardquestion_"'+indexQuestion+'" name="standardquestion" class="form-control"><option value="">Select question</option></select></td></tr>';
+						$('#flowQuestionContent table').append(stringDataTable);
+					});
+				}
+				
+			})
+		 });
+		});
+	*/
+	var listStdQuestions=[];
+	var token="";
+	var basicUrl="http://localhost:8084";
+	$(document).on('change', '#source_select', function() {
+		console.log("Enter....");
+		$('#flowContent').html('<h4> Loading flows ....</h4>');
+		$('#flowQuestionContent').html('');
+		$('#infosection').html('');
+		window.token=$('#source_select').val();
+		//console.log($('#source_select').val());
+		$.ajax({
+			url: window.basicUrl+"/listflows",
+			data: {
+				token: $('#source_select').val()
+			},
+			dataType: "json"
+		}).done(function(flows) {
+			//console.log(flows);
+			var emptyJSON=JSON.stringify(new Object());
+			if(JSON.stringify(flows)==emptyJSON)
+			{
+				$('#flowContent').html('');
+			}
+			else
+			{
+				$('#flowContent').html('<select  id="flow_select" name="flow_select" class="form-control"></select>');
+				$('#flowContent select').append('<option value="">Select a flow</option>');
+				$.each(flows, function(index, flow) {
+					$('#flowContent select').append('<option value="'+flow.uuid+'">'+flow.name+'</option>');
+				});
+				//$('#flowContent').append('<button type="submit" class="btn btn-default" id="buttonLoadFlowQuestions">Load questions</button>');
+				//$('#buttonLoadFlowQuestions').attr("disabled","disabled");
+			}
+			
+		}).error(function(err){
+			$('#flowContent').html('<p>'+err+'</p>');
+			});
+			return false;
+	});
+	$(document).on('change', '#flow_select', function() {
+		//console.log("Enter2....");
+		$('#flowQuestionContent').html('<h4> Loading flows questions ....</h4>');
+		$('#infosection').html(''); 
+		//console.log("Enter function 2.....");
+		$.ajax({
+			url: window.basicUrl+"/getquestions",
+			data: {
+				token: $('#source_select').val(),
+				flowUUID:$('#flow_select').val()
+			},
+			dataType: "json"
+		}).done(function(questions) {
+			//console.log(flows);
+			var emptyJSON=JSON.stringify(new Object());
+			if(JSON.stringify(questions)==emptyJSON)
+			{
+				$('#flowQuestionContent').html('');
+			}
+			else
+			{
+				$('#flowQuestionContent').html('<table id="tbMappingQuestion"><thead><tr><th>Flow questions</th><th>Standardized questions</th></tr></table>');
+				var indexQuestion=1;
+				$.each(questions, function(index, question) {
+					var stringDataTable='<tr data-id='+question.id+'><td>' + question.msg + '</td><td>';
+					var stringDataTableStdQuestions='<select  id="'+question.id+'" name="standardquestion" class="form-control"> <option value="">Select question</option> ';
+					for(var indexStdquestion=0;indexStdquestion<window.listStdQuestions.length;indexStdquestion++)
+					{
+						var oStandardQuestion=window.listStdQuestions[indexStdquestion];
+						stringDataTableStdQuestions+='<option options_response='+JSON.stringify(oStandardQuestion.responsesOption)+' value="'+oStandardQuestion.id+'">'+oStandardQuestion.question+'</option>';
+					}
+					stringDataTableStdQuestions+='</select></td></tr>';
+					stringDataTable+=stringDataTableStdQuestions;
+					$('#flowQuestionContent table').append(stringDataTable);
+				});
+				$('#flowQuestionContent').append('<button type="submit" class="btn btn-default" id="buttonMapQuestion">Map questions</button>');
+			}
+			
+		})
+		return false;
+	});
+	$(document).on('click', '#buttonMapQuestion', function() {
+		$('#infosection').html('');
+		var rows=$('#tbMappingQuestion > tbody > tr');
+		var country=$('#source_select option:selected').text();
+		//console.log(country);
+		var listQuestions=[];
+		for(var indexRow=0;indexRow<rows.length;indexRow++)
+		{
+			var oRows=rows[indexRow];
+			//console.log(oRows);
+			var questionId=rows[indexRow].getAttribute("data-id");
+			var selectedIndex=document.getElementById(questionId).selectedIndex;
+			if(selectedIndex>0)
+			{
+				var element= rows[indexRow].getElementsByTagName('td');
+				var questionTitle=element[0].textContent;
+				var stdQuestionId=element[1].getElementsByTagName('select')[0].value;
+				var stdQuestionTitle=document.getElementById(questionId).options[selectedIndex].text;
+				var stdQuestionOptionsResponses=document.getElementById(questionId).options[selectedIndex].getAttribute('options_response');
+				//console.log(JSON.parse(stdQuestionOptionsResponses));
+				var oQuestion={id:questionId,title:questionTitle,idStdQuestion:stdQuestionId,stdQuestion:stdQuestionTitle,
+					stdResponsesOption:JSON.parse(stdQuestionOptionsResponses)};
+					//alert(JSON.stringify( oQuestion));
+				listQuestions.push(oQuestion);
+			}
+			else
+			{
+				continue;
+			}
+		}//end for 
+		//console.log(listQuestions);
+		//alert(JSON.stringify(listQuestions));
+		
+		var oQuestionMapping={flowUuid:$('#flow_select').val(),flowName:$('#flow_select  option:selected').text(),questions:listQuestions,
+			country:country,token:$('#source_select').val()};
+		console.log(oQuestionMapping);
+		
+		if(listQuestions.length>0)
+		{
+			$.ajax({
+			url: window.basicUrl+"/getmappingquestion",
+			data: oQuestionMapping,
+			dataType: "json"
+			}).done(function(res) {
+				if(res==true)
+				{
+					$('#infosection').html('<span>Success: mapping of questions created!</span>');
+				}
+				else
+				{
+					$('#infosection').html('<span>Warning: Failed to create the mapping of questions!</span>');
+				}
+				
+			})
+		}
+		
+		return false;
+	});
+	$(window).on("load",function()
+	{
+		console.log("---onload-----");
+		$.ajax({
+			url: window.basicUrl+"/getstdquestions",
+			dataType: "json"
+		}).done(function(questions) {
+			window.listStdQuestions=questions;
+			//console.log(window.listStdQuestions);
+			})
+		return false;
+	});
+</script>
+</head>
+<body class="container">
+	<header>
+		<nav class="navbar navbar-default" role="navigation">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					
+				</div>
+				<ul class="nav navbar-nav">
+					<li <% if (menu==="main") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					>
+					<a href="/index">Create dashboard</a></li>
+					<li <% if (menu==="mapping") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					><a href="/mapping">Responses mappings</a></li>
+					<li <% if (menu==="view") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					><a href="/view">View data</a></li>
+					<li><a href="/logout">Logout</a></li>
+				</ul>
+			 </div>
+	</nav>
+	</header>
+	<div id="logout_box">
+		<!--<a href="/logout">Logout</a>-->
+	</div>
+<main>
+	<div id="pageTitle">
+	<h3>Create project dashboard</h3>
+	</div>
+    <div class="jumbotron">
+		<form action="" method="">
+			<select  id="source_select" name="source_select" class="form-control">
+				<option value="">Select data source</option>
+				<% rapidProDataSources.forEach(function(dataSource) { %>
+					<option value="<%= dataSource.token %>"><%= dataSource.country %></option>
+				<% }); %>
+			</select>
+			<!--<br><br>-->
+			<p>
+				<!--<button type="submit" class="btn btn-default" id="buttonLoadFlow">Load flows</button>-->
+			</p>
+			<div id="flowContent"></div>
+			<div id="flowQuestionContent"></div>
+			<div id="infosection"></div>
+		</form>
+    </div>
+</main>
+
+<footer>
+    
+</footer>
+
+</body>
+</html>

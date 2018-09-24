@@ -1,0 +1,478 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<title>Linkages Dashboard</title>
+
+	<!-- CSS (load bootstrap from a CDN) -->
+	<script src="/js/jquery-2.0.3.min.js"> </script>
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+	<link rel="stylesheet" href="/css/bootstrap-theme.css">
+	<script src="/js/bootstrap.min.js"> </script>
+	<link rel="stylesheet" href="/css/lmisstyle.css">
+	
+	<style>
+		#logout_box {
+		  float:right;
+		  margin-right: 14px;
+		  margin-top: 13px;
+		}
+		#buttonLoadFlow {
+		  float:right;
+		  margin-right: 14px;
+		}
+		body    { padding-top:50px; }
+		.form-control
+		{
+			width:80%;
+		}
+		#pageTitle
+		{
+			text-align:center;
+		}
+		.container {
+			/*width: 553px;*/
+			width: 80%;
+		}
+		table {
+			border-collapse: collapse;
+			margin-bottom:5px;
+
+		}
+
+		table, th, td {
+			border: 1px solid black;
+		}
+		#flowQuestionContent{
+			margin-top:20px;
+			margin-bottom:20px;
+		}
+		table td{
+			padding:5px;
+		}
+		.btn {
+			float:right;
+		}
+		#infosection
+		{
+			margin-top:35px;
+			color:blue;
+		}
+	</style>
+<script type="text/javascript">
+	var _token="";
+	var basicUrl="http://localhost:8084";
+	function sortListMappedQuestion(listMappedQuestion)
+	{
+		var listSortQuestions=[];
+		var maxLength=listMappedQuestion.length;
+		for(K = 0; K < maxLength; K++)
+		{
+			for(I = maxLength - 2;I >= 0; I--)
+			{
+				for(J = 0; J <= I; J++) {
+					if(listMappedQuestion[J+1].key<listMappedQuestion[J].key){
+						var t=listMappedQuestion[J+1];
+						listMappedQuestion[J+1]=listMappedQuestion[J];
+						listMappedQuestion[J]=t;
+					}
+				}
+			}
+		}
+		listSortQuestions=listMappedQuestion;
+		return listSortQuestions;
+	}
+	function checkifProjetInTheList(listProjectAdded,projectToAdd)
+	{
+		var findItem=false;
+		for(var indexProject=0;indexProject<listProjectAdded.length;indexProject++)
+		{
+			if(listProjectAdded[indexProject]==projectToAdd)
+			{
+				findItem=true;
+				break;
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return findItem;
+	}
+	function getAssociatedQuestionMapping(flowUUID,idQuestion)
+	{
+		var foundItem=null;
+		//console.log("idquestion:"+idQuestion);
+		for(var indexQuestion=0;indexQuestion<window.listQuestionMapping.length;indexQuestion++)
+		{
+			//console.log();
+			if(window.listQuestionMapping[indexQuestion].flowUuid==flowUUID)
+			{
+				//console.log('Found it!!');
+				var questionFound=false;
+				for(var i=0;i<listQuestionMapping[indexQuestion].questions.length;i++)
+				{
+					if(listQuestionMapping[indexQuestion].questions[i].id=idQuestion)
+					{
+						questionFound=true;
+						foundItem=listQuestionMapping[indexQuestion].questions[i];
+						break;
+					}
+					else
+					{
+						continue;
+					}
+				}
+				//foundItem=listQuestionMapping[indexQuestion];
+				//break;
+				if(questionFound)
+				{
+					break;
+				}
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return foundItem;
+	}
+	
+	function getAssociatedCleanedQuestion(listCleandedQuestion,ruleId)
+	{
+		var foundItem=null;
+		var questionFound=false;
+		//console.log("idquestion:"+idQuestion);
+		for(var indexQuestion=0;indexQuestion<listCleandedQuestion.length;indexQuestion++)
+		{
+			//console.log();
+			if(listCleandedQuestion[indexQuestion].ruleId==ruleId)
+			{
+				foundItem=listCleandedQuestion[indexQuestion];
+				questionFound=true;
+				if(questionFound)
+				{
+					break;
+				}
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return foundItem;
+	}
+	
+	//Returns list of contactResponse that meet the parameters criteria
+	function getListAssociatedResponseWithContact(listResponses,flowUUID,ruleId)
+	{
+		var listResponseWithContats=[];
+		for(var indexResponse=0;indexResponse<listResponses.length;indexResponse++)
+		{
+			if(listResponses[indexResponse].flowUUID==flowUUID && listResponses[indexResponse].ruleId==ruleId)
+			{
+				listResponseWithContats.push(listResponses[indexResponse]);
+			}
+			//listResponseWithContats.push();
+		}
+		return listResponseWithContats;
+	}
+	var listQuestionMapping=[];
+	var listProjectInformations=[];
+	$(window).on("load",function()
+	{
+		//console.log("---onload-----");
+		$('#projectContent').html('<h4> Loading project ....</h4>');
+		$.ajax({
+			url: window.basicUrl+ "/getallprojectinfo",
+			dataType: "json"
+		}).done(function(listProjectInfos) {
+			if(listProjectInfos.length>0)
+			{
+				window.listProjectInformations=listProjectInfos;
+				var projectAlreadyAdded=[];
+				$('#projectContent').html('<select  id="project_select" name="project_select" class="form-control"></select>');
+				$('#projectContent select').append('<option value="">Select a project dashboard</option>');
+				for(var indexProject=0;indexProject<listProjectInfos.length;indexProject++)
+				{
+					var oProjectInformation=listProjectInfos[indexProject];
+					var projectExist=checkifProjetInTheList(projectAlreadyAdded,oProjectInformation.country);
+					if(!projectExist)
+					{
+						$('#projectContent select').append('<option value="'+oProjectInformation.token+'">'+oProjectInformation.country+'</option>');
+						projectAlreadyAdded.push(oProjectInformation.country);
+					}
+					else
+					{
+						continue;
+					}
+					
+				}
+			}
+			else
+			{
+				$('#projectContent').html('<h4> No project dashboard has been created</h4>');
+			}
+			
+			})
+			return false;
+			
+	});
+	$(document).on('change', '#project_select', function() {
+		$('#flowQuestionContent').html('<h4> Loading flows ....</h4>');
+		//var country=$('#project_select').val();
+		window._token=$('#project_select').val();
+		//console.log(window._token=="");
+		var tempListProjectInformation=window.listProjectInformations;
+		//console.log(tempListQuestionMapping);
+		if(window._token=="")
+		{
+			$('#flowQuestionContent').html('');
+			$('#flowResponsesContent').html('');
+			return false;
+		}
+		var flowAlreadyAdded=[];
+		$('#flowQuestionContent').html('<select  id="flow_select" name="flow_select" class="form-control"></select>');
+		$('#flowQuestionContent select').append('<option value="">Select a flow questions</option>');
+		for(var indexProjectInfo=0;indexProjectInfo<tempListProjectInformation.length;indexProjectInfo++)
+		{
+			var oProjectInfo=tempListProjectInformation[indexProjectInfo];
+			var flowInTheList=checkifProjetInTheList(flowAlreadyAdded,oProjectInfo.flowUUID);
+			if(!flowInTheList)
+			{
+				$('#flowQuestionContent select').append('<option value="'+oProjectInfo.flowUUID+'">'+oProjectInfo.flowName+'</option>');
+				flowAlreadyAdded.push(oProjectInfo.flowUUID);
+			}
+			else
+			{
+				continue;
+			}
+		}//end for
+		return false;
+		
+	});
+	$(document).on('change', '#flowQuestionContent', function() {
+		console.log('Enter ...');
+		//console.log(window._token);
+		//console.log($('#flow_select').val());
+		_flowUUID=$('#flow_select').val();
+		if(_flowUUID=="")
+		{
+			$('#flowResponsesContent').html('');
+			return false;
+		}
+		
+		$('#flowResponsesContent').html('<h4> Loading flows ....</h4>');
+		
+		//now get list of corresponded flow question definition
+		$.ajax({
+		url: window.basicUrl+"/listcleanedquestion",
+		data: {
+			flowUUID:_flowUUID
+		},
+		dataType: "json"
+		}).done(function(listCleanedQuestions){
+			//console.log(responsesCategory);
+			if(listCleanedQuestions.length>0)
+			{
+				$('#flowResponsesContent').html('<table id="tbMappingResponse"><thead><tr><th>Flow questions</th><th>Cleaned header</th><th><input type="checkbox" id="chk_command" value="" checked></th></tr></table>');
+				//console.log("Enter cleanedresponse");
+				var listMappedQuestion=[];
+				for(var indexResponse=0;indexResponse<listCleanedQuestions.length;indexResponse++)
+				{
+					
+					var oAssociatedCleanedQuestion=listCleanedQuestions[indexResponse];
+					
+					//console.log()
+					var stringDataTable='<tr questionId='+oAssociatedCleanedQuestion.questionId+' ruleId='+oAssociatedCleanedQuestion.ruleId+' indexResponse='+indexResponse+'><td width="60%">' + oAssociatedCleanedQuestion.question + '</td>';
+					stringDataTable+='<td>'+oAssociatedCleanedQuestion.ruleLabel+'</td>'
+					stringDataTable+='<td> <input type="checkbox" id="chk_'+indexResponse+'" value="" checked></td>'
+					
+					stringDataTable+='</tr>'
+					var oMappedQuestion={key:(oAssociatedCleanedQuestion.question+oAssociatedCleanedQuestion.ruleLabel).trim(),
+						value:stringDataTable};
+					listMappedQuestion.push(oMappedQuestion);
+					
+					//console.log(stringDataTable);
+					//$('#flowResponsesContent table').append(stringDataTable);
+				}//end for
+				var listSortMappedQuestion=sortListMappedQuestion(listMappedQuestion);
+				for(var indexSortedQuestion=0;indexSortedQuestion<listSortMappedQuestion.length;indexSortedQuestion++)
+				{
+					$('#flowResponsesContent table').append(listSortMappedQuestion[indexSortedQuestion].value);
+				}
+				//console.log(listSortMappedQuestion);
+				$('#flowResponsesContent').append('<button type="submit" class="btn btn-default" id="buttonMapResponse">Map responses</button>');
+				
+			}//end if listCleanedQuestions
+			
+			});
+		return false;
+	});
+	$(document).on('click', '#chk_command', function() {
+		//console.log("chk_command clicked");
+		var checkBoxElement= document.getElementById("chk_command");
+		var rows=$('#tbMappingResponse > tbody > tr');
+		if(!checkBoxElement.checked)
+		{
+			for(var indexRow=0;indexRow<rows.length;indexRow++)
+			{
+				var rowCheckBoxElement= document.getElementById("chk_"+indexRow);
+				rowCheckBoxElement.checked=false;
+			}
+		}
+		else
+		{
+			for(var indexRow=0;indexRow<rows.length;indexRow++)
+			{
+				var rowCheckBoxElement= document.getElementById("chk_"+indexRow);
+				rowCheckBoxElement.checked=true;
+			}
+		}
+	});
+	$(document).on('click', '#buttonMapResponse', function() {
+		
+		var rows=$('#tbMappingResponse > tbody > tr');
+		var listMappedResponseRules=[];
+		console.log(rows[0]);
+		for(var indexRow=0;indexRow<rows.length;indexRow++)
+		{
+			var indexResponse=rows[indexRow].getAttribute("indexResponse");
+			var checkBoxElement= document.getElementById("chk_"+indexResponse);
+			if(checkBoxElement.checked)
+			{
+				var questionId=rows[indexRow].getAttribute("questionId");
+				var ruleId=rows[indexRow].getAttribute("ruleId");
+				var element= rows[indexRow].getElementsByTagName('td');
+				var questionTitle=element[0].textContent;
+				var questionLabel=element[1].textContent;
+				var oResponseRules={flowUUID:window._flowUUID,questionId:questionId,question:questionTitle,questionLabel:questionLabel,
+					ruleId:ruleId};
+				listMappedResponseRules.push(oResponseRules);
+			}
+			
+			
+		}
+		/*console.log(listMappedResponseRules);
+		console.log('------------------checked question title-------------------');
+		*/
+		if(listMappedResponseRules.length>0)
+		{
+			_flowUUID=$('#flow_select').val();
+			$.ajax({
+			url: window.basicUrl+"/getresponsesflow",
+			data: {
+				token: window._token,
+				flowUUID:_flowUUID
+			},
+			dataType: "json",
+			timeout:60000
+			}).done(function(listResponses) {
+				if(listResponses.length>0)
+				{
+					var listResponseMappingObjects=[];
+					for(var indexMappedRule=0;indexMappedRule<listMappedResponseRules.length;indexMappedRule++)
+					{
+						var _questionId=listMappedResponseRules[indexMappedRule].questionId;
+						var _flowUUID=listMappedResponseRules[indexMappedRule].flowUUID;
+						var _question=listMappedResponseRules[indexMappedRule].question;
+						var _questionLabel=listMappedResponseRules[indexMappedRule].questionLabel;
+						var _ruleId=listMappedResponseRules[indexMappedRule].ruleId;
+						var listResponsesMatching=getListAssociatedResponseWithContact(listResponses,_flowUUID,_ruleId);
+						for(var indexResponse=0;indexResponse<listResponsesMatching.length;indexResponse++)
+						{
+							
+							var oResponse=listResponsesMatching[indexResponse];
+							var _date=oResponse.time.split("T")[0];
+							var oResponseMappingObject={contactId:oResponse.contactId,contact:oResponse.contact,
+								flowUuid:oResponse.flowUUID,questionId:_questionId,question:_question,
+								questionLabel:_questionLabel,responseId:oResponse.ruleId,response:oResponse.responseCategory,time:_date};
+								listResponseMappingObjects.push(oResponseMappingObject);
+								
+						}
+					}//end for listMappedResponseRule
+					console.log(listResponseMappingObjects);
+					console.log("--------Now make connection to the server----------------");
+					$.ajax({
+						url: window.basicUrl+"/saveresponsemapping",
+						data: {responsesMapping:listResponseMappingObjects},
+						dataType: "json",
+						timeout:60000
+						}).done(function(res) {
+							if(res==true)
+							{
+								$('#infosection').html('<span>Success: mapping of responses created!</span>');
+							}
+							else
+							{
+								$('#infosection').html('<span>Warning: Failed to create the mapping of response!</span>');
+							}
+						});//end of done saveresponsemapping
+				}
+			});//end of done
+		}
+		return false
+		
+	});
+</script>
+</head>
+<body class="container">
+	<header>
+		<nav class="navbar navbar-default" role="navigation">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					
+				</div>
+				<ul class="nav navbar-nav">
+					<li <% if (menu==="main") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					>
+					<a href="/index">Create dashboard</a></li>
+					<li <% if (menu==="mapping") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					><a href="/mapping">Responses mappings</a></li>
+					<li <% if (menu==="view") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					><a href="/view">View data</a></li>
+					<li><a href="/logout">Logout</a></li>
+				</ul>
+			 </div>
+	</nav>
+	</header>
+	<div id="logout_box">
+		<!--<a href="/logout">Logout</a>-->
+	</div>
+<main>
+	<div id="pageTitle">
+	<h3>Responses mapping</h3>
+	</div>
+    <div class="jumbotron">
+		<form action="" method="">
+			
+			<!--<br><br>-->
+			<p>
+				<!--<button type="submit" class="btn btn-default" id="buttonLoadFlow">Load flows</button>-->
+			</p>
+			<div id="projectContent"></div>
+			<div id="flowQuestionContent"></div>
+			<div id="flowResponsesContent"></div>
+			<div id="infosection"></div>
+			<div id="ResponseMappingTable"></div>
+		</form>
+    </div>
+</main>
+
+<footer>
+    
+</footer>
+
+</body>
+</html>

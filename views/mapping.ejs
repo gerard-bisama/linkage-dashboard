@@ -1,0 +1,409 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<title>Linkages Dashboard</title>
+
+	<!-- CSS (load bootstrap from a CDN) -->
+	<script src="/js/jquery-2.0.3.min.js"> </script>
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+	<link rel="stylesheet" href="/css/bootstrap-theme.css">
+	<script src="/js/bootstrap.min.js"> </script>
+	<link rel="stylesheet" href="/css/lmisstyle.css">
+	
+	<style>
+		#logout_box {
+		  float:right;
+		  margin-right: 14px;
+		  margin-top: 13px;
+		}
+		#buttonLoadFlow {
+		  float:right;
+		  margin-right: 14px;
+		}
+		body    { padding-top:50px; }
+		.form-control
+		{
+			width:80%;
+		}
+		#pageTitle
+		{
+			text-align:center;
+		}
+		.container {
+			/*width: 553px;*/
+			width: 80%;
+		}
+		table {
+			border-collapse: collapse;
+			margin-bottom:5px;
+
+		}
+
+		table, th, td {
+			border: 1px solid black;
+		}
+		#flowQuestionContent{
+			margin-top:20px;
+			margin-bottom:20px;
+		}
+		table td{
+			padding:5px;
+		}
+		.btn {
+			float:right;
+		}
+		#infosection
+		{
+			margin-top:35px;
+			color:blue;
+		}
+	</style>
+<script type="text/javascript">
+	var _token="";
+	var basicUrl="http://localhost:8084";
+	function checkifProjetInTheList(listProjectAdded,projectToAdd)
+	{
+		var findItem=false;
+		for(var indexProject=0;indexProject<listProjectAdded.length;indexProject++)
+		{
+			if(listProjectAdded[indexProject]==projectToAdd)
+			{
+				findItem=true;
+				break;
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return findItem;
+	}
+	function getAssociatedQuestionMapping(flowUUID,idQuestion)
+	{
+		var foundItem=null;
+		//console.log("idquestion:"+idQuestion);
+		for(var indexQuestion=0;indexQuestion<window.listQuestionMapping.length;indexQuestion++)
+		{
+			//console.log();
+			if(window.listQuestionMapping[indexQuestion].flowUuid==flowUUID)
+			{
+				//console.log('Found it!!');
+				var questionFound=false;
+				for(var i=0;i<listQuestionMapping[indexQuestion].questions.length;i++)
+				{
+					if(listQuestionMapping[indexQuestion].questions[i].id=idQuestion)
+					{
+						questionFound=true;
+						foundItem=listQuestionMapping[indexQuestion].questions[i];
+						break;
+					}
+					else
+					{
+						continue;
+					}
+				}
+				//foundItem=listQuestionMapping[indexQuestion];
+				//break;
+				if(questionFound)
+				{
+					break;
+				}
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return foundItem;
+	}
+	//Returns list of contactResponse that meet the parameters criteria
+	function getListAssociatedResponseWithContact(listResponses,flowUUID,questionId,response)
+	{
+		var listResponseWithContats=[];
+		for(var indexResponse=0;indexResponse<listResponses.length;indexResponse++)
+		{
+			if(listResponses[indexResponse].flowUUID==flowUUID && listResponses[indexResponse].questionId==questionId
+			&& listResponses[indexResponse].response==response)
+			{
+				listResponseWithContats.push(listResponses[indexResponse]);
+			}
+			//listResponseWithContats.push();
+		}
+		return listResponseWithContats;
+	}
+	var listQuestionMapping=[];
+	$(window).on("load",function()
+	{
+		//console.log("---onload-----");
+		$('#projectContent').html('<h4> Loading project ....</h4>');
+		$.ajax({
+			url: window.basicUrl+ "/getallmappingquestion",
+			dataType: "json"
+		}).done(function(questionsMapping) {
+			if(questionsMapping.length>0)
+			{
+				window.listQuestionMapping=questionsMapping;
+				var projectAlreadyAdded=[];
+				$('#projectContent').html('<select  id="project_select" name="project_select" class="form-control"></select>');
+				$('#projectContent select').append('<option value="">Select a project dashboard</option>');
+				for(var indexQtMapping=0;indexQtMapping<questionsMapping.length;indexQtMapping++)
+				{
+					var oQuestionMapping=questionsMapping[indexQtMapping];
+					var projectExist=checkifProjetInTheList(projectAlreadyAdded,oQuestionMapping.country);
+					if(!projectExist)
+					{
+						$('#projectContent select').append('<option value="'+oQuestionMapping.token+'">'+oQuestionMapping.country+'</option>');
+						projectAlreadyAdded.push(oQuestionMapping.country);
+					}
+					else
+					{
+						continue;
+					}
+					
+				}
+			}
+			else
+			{
+				$('#projectContent').html('<h4> No project dashboard has been created</h4>');
+			}
+			
+			})
+			return false;
+			
+	});
+	$(document).on('change', '#project_select', function() {
+		$('#flowQuestionContent').html('<h4> Loading flows ....</h4>');
+		//var country=$('#project_select').val();
+		window._token=$('#project_select').val();
+		//console.log(window._token=="");
+		var tempListQuestionMapping=window.listQuestionMapping;
+		//console.log(tempListQuestionMapping);
+		if(window._token=="")
+		{
+			$('#flowQuestionContent').html('');
+			$('#flowResponsesContent').html('');
+			return false;
+		}
+		var flowAlreadyAdded=[];
+		$('#flowQuestionContent').html('<select  id="flow_select" name="flow_select" class="form-control"></select>');
+		$('#flowQuestionContent select').append('<option value="">Select a flow questions</option>');
+		for(var indexQuestionMapping=0;indexQuestionMapping<tempListQuestionMapping.length;indexQuestionMapping++)
+		{
+			var oQuestionMapping=tempListQuestionMapping[indexQuestionMapping];
+			var flowInTheList=checkifProjetInTheList(flowAlreadyAdded,oQuestionMapping.flowUuid);
+			if(!flowInTheList)
+			{
+				$('#flowQuestionContent select').append('<option value="'+oQuestionMapping.flowUuid+'">'+oQuestionMapping.flowName+'</option>');
+				flowAlreadyAdded.push(oQuestionMapping.flowUuid);
+			}
+			else
+			{
+				continue;
+			}
+		}//end for
+		return false;
+		
+	});
+	$(document).on('change', '#flowQuestionContent', function() {
+		console.log('Enter ...');
+		//console.log(window._token);
+		//console.log($('#flow_select').val());
+		_flowUUID=$('#flow_select').val();
+		if(_flowUUID=="")
+		{
+			$('#flowResponsesContent').html('');
+			return false;
+		}
+		
+		$('#flowResponsesContent').html('<h4> Loading flows ....</h4>');
+		$.ajax({
+			url: window.basicUrl+"/getresponsesflowbycat",
+			data: {
+				token: window._token,
+				flowUUID:_flowUUID
+			},
+			dataType: "json"
+		}).done(function(responsesCategory) {
+			$('#flowResponsesContent').html('');
+			//console.log(responsesCategory);
+			if(responsesCategory.length>0)
+			{
+				$('#flowResponsesContent').html('<table id="tbMappingResponse"><thead><tr><th>Flow questions</th><th>Responses category</th><th>Associated std questions</th><th>Associated responses</th></tr></table>');
+				for(var indexResponse=0;indexResponse<responsesCategory.length;indexResponse++)
+				{
+					var oAssociatedQuestionMapping=getAssociatedQuestionMapping(_flowUUID,responsesCategory[indexResponse].questionId);
+					//console.log(oAssociatedQuestionMapping);
+					//var builtID=responsesCategory[indexResponse].questionId+"_"+responsesCategory[indexResponse].response.substring(0,5);
+					var builtID=responsesCategory[indexResponse].questionId+"_"+(""+responsesCategory[indexResponse].response).substring(0,5);
+					//var stringDataTable='<tr question-id='+responsesCategory[indexResponse].questionId+'><td>' +oAssociatedQuestionMapping.title + '</td>';
+					var stringDataTable='<tr question-id='+builtID+'><td>' +oAssociatedQuestionMapping.title + '</td>';
+					stringDataTable+="<td>"+responsesCategory[indexResponse].response+"</td>";
+					stringDataTable+="<td>"+oAssociatedQuestionMapping.stdQuestion+"</td>";
+					var stringDataTableStdResponses='<td><select  id="'+builtID+'" name="standardresponse" class="form-control"> <option value="">Select standardized responses</option> ';
+					for(var indexStdResponse=0;indexStdResponse<oAssociatedQuestionMapping.stdResponsesOption.length;indexStdResponse++)
+					{
+						stringDataTableStdResponses+='<option value="'+oAssociatedQuestionMapping.stdResponsesOption[indexStdResponse].option+'">'+oAssociatedQuestionMapping.stdResponsesOption[indexStdResponse].description+'</option>';
+					
+					}
+					stringDataTableStdResponses+='</select></td></tr>';
+					$('#flowResponsesContent table').append(stringDataTable+stringDataTableStdResponses);
+				}
+				$('#flowResponsesContent').append('<button type="submit" class="btn btn-default" id="buttonMapResponse">Map responses</button>');
+			}
+			});
+		return false;
+	});
+	$(document).on('click', '#buttonMapResponse', function() {
+		
+		var rows=$('#tbMappingResponse > tbody > tr');
+		var listMappedResponseRules=[];
+		for(var indexRow=0;indexRow<rows.length;indexRow++)
+		{
+			var questionId=rows[indexRow].getAttribute("question-id");
+			//alert(questionId);
+			var selectedIndex=document.getElementById(questionId).selectedIndex;
+			//alert(selectedIndex);
+			if(selectedIndex>0)
+			{
+				var _questionId=questionId.split("_")[0];
+				var element= rows[indexRow].getElementsByTagName('td');
+				var questionTitle=element[0].textContent;
+				var questionResponse=element[1].textContent;
+				var associatedStdQuestions=element[2].textContent;
+				var associatedStdResponse=document.getElementById(questionId).options[selectedIndex].text;
+				var oResponseRules={flowUUID:window._flowUUID,questionId:_questionId,question:questionTitle,response:questionResponse,
+					stdQuestion:associatedStdQuestions,stdResponse:associatedStdResponse};
+				listMappedResponseRules.push(oResponseRules);
+			}
+			else
+			{
+				continue;
+			}
+		}
+		//console.log(listMappedResponseRules);
+		if(listMappedResponseRules.length>0)
+		{
+			//console.log(listMappedResponseRules);
+			//Now get all responses from the flows
+			$.ajax({
+			url: window.basicUrl+"/getresponsesflow",
+			data: {
+				token: window._token,
+				flowUUID:_flowUUID
+			},
+			dataType: "json"
+			}).done(function(listResponses) {
+				if(listResponses.length>0)
+				{
+					//console.log(listResponses);
+					var listResponseMappingObjects=[];
+					for(var indexMappedRule=0;indexMappedRule<listMappedResponseRules.length;indexMappedRule++)
+					{
+						var _questionId=listMappedResponseRules[indexMappedRule].questionId;
+						var _flowUUID=listMappedResponseRules[indexMappedRule].flowUUID;
+						var _response=listMappedResponseRules[indexMappedRule].response;
+						var _question=listMappedResponseRules[indexMappedRule].question;
+						var _stdQuestion=listMappedResponseRules[indexMappedRule].stdQuestion;
+						var _stdResponse=listMappedResponseRules[indexMappedRule].stdResponse;
+						//console.log(_flowUUID+"|"+_questionId+"|"+_response+"|"+_stdQuestion);
+						var listResponsesMatching=getListAssociatedResponseWithContact(listResponses,_flowUUID,_questionId,_response);
+						
+						//build responseMappingObject
+						for(var indexResponse=0;indexResponse<listResponsesMatching.length;indexResponse++)
+						{
+							
+							var oResponse=listResponsesMatching[indexResponse];
+							var _date=oResponse.time.split("T")[0];
+							var oResponseMappingObject={contactId:oResponse.contactId,contact:oResponse.contact,
+								flowUuid:oResponse.flowUUID,questionId:oResponse.questionId,question:_question,
+								response:oResponse.response,stdQuestion:_stdQuestion,stdResponse:_stdResponse,time:_date};
+								listResponseMappingObjects.push(oResponseMappingObject);
+								
+						}
+						//var oResponseMappingObject={contactId:,contact:,flowUuid:,questionId:,question:,response:,stdQuestion:,stdResponse:,time}
+					}
+					console.log(listResponseMappingObjects);
+					$.ajax({
+						url: window.basicUrl+"/saveresponsemapping",
+						data: {responsesMapping:listResponseMappingObjects},
+						dataType: "json"
+						}).done(function(res) {
+							if(res==true)
+							{
+								$('#infosection').html('<span>Success: mapping of responses created!</span>');
+							}
+							else
+							{
+								$('#infosection').html('<span>Warning: Failed to create the mapping of response!</span>');
+							}
+						});
+				}
+			});
+		}
+		
+		return false
+		
+	});
+</script>
+</head>
+<body class="container">
+	<header>
+		<nav class="navbar navbar-default" role="navigation">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					
+				</div>
+				<ul class="nav navbar-nav">
+					<li <% if (menu==="main") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					>
+					<a href="/index">Create dashboard</a></li>
+					<li <% if (menu==="mapping") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					><a href="/mapping">Responses mappings</a></li>
+					<li <% if (menu==="view") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					><a href="/view">View data</a></li>
+					<li><a href="/logout">Logout</a></li>
+				</ul>
+			 </div>
+	</nav>
+	</header>
+	<div id="logout_box">
+		<!--<a href="/logout">Logout</a>-->
+	</div>
+<main>
+	<div id="pageTitle">
+	<h3>Responses mapping</h3>
+	</div>
+    <div class="jumbotron">
+		<form action="" method="">
+			
+			<!--<br><br>-->
+			<p>
+				<!--<button type="submit" class="btn btn-default" id="buttonLoadFlow">Load flows</button>-->
+			</p>
+			<div id="projectContent"></div>
+			<div id="flowQuestionContent"></div>
+			<div id="flowResponsesContent"></div>
+			<div id="infosection"></div>
+			<div id="ResponseMappingTable"></div>
+		</form>
+    </div>
+</main>
+
+<footer>
+    
+</footer>
+
+</body>
+</html>

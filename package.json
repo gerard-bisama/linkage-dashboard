@@ -1,0 +1,36 @@
+{
+  "name": "linkage-dashboard",
+  "description": "App to process data from rapidpro/excel like survey and to display a standardized dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "forever-monitor": "^1.7.1",
+    "moment": "^2.22.1",
+    "nodemailer": "^4.6.4"
+  },
+  "author": "Gerard",
+  "license": "BSD-3-Clause",
+  "keywords": [
+    "DHIS2",
+    "App"
+  ],
+  "devDependencies": {
+    "express": "^4.16.3",
+    "xmlhttprequest": "^1.8.0",
+    "body-parser": "^1.18.3",
+    "async":"^2.6.1",
+    "express-session":"^1.15.3",
+    "mongodb": "^3.1.4",
+    "mongoose": "^5.2.14",
+    "ejs": "^2.6.1",
+    "async":"^2.6.1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gerard-bisama/linkage-dashboard.git"
+  },
+  "homepage": "https://github.com/gerard-bisama/linkage-dashboard.git#readme"
+}

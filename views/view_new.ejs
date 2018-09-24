@@ -1,0 +1,541 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<title>Linkages Dashboard</title>
+
+	<!-- CSS (load bootstrap from a CDN) -->
+	<script src="/js/jquery-2.0.3.min.js"> </script>
+	<script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script> 
+	<script type="text/javascript" src="https://canvasjs.com/assets/script/jquery.canvasjs.min.js"></script> 
+	<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+	<link rel="stylesheet" href="/css/bootstrap-theme.css">
+	<script src="/js/bootstrap.min.js"> </script>
+	<link rel="stylesheet" href="/css/lmisstyle.css">
+	
+	<style>
+		#logout_box {
+		  float:right;
+		  margin-right: 14px;
+		  margin-top: 13px;
+		}
+		#buttonLoadFlow {
+		  float:right;
+		  margin-right: 14px;
+		}
+		body    { padding-top:50px; }
+		.form-control
+		{
+			width:80%;
+		}
+		#pageTitle
+		{
+			text-align:center;
+		}
+		.container {
+			/*width: 553px;*/
+			width: 80%;
+		}
+		table {
+			border-collapse: collapse;
+			margin-bottom:5px;
+
+		}
+
+		table, th, td {
+			border: 1px solid black;
+		}
+		#flowQuestionContent{
+			margin-top:20px;
+			margin-bottom:20px;
+		}
+		#responseMappingContent{
+			margin-top:20px;
+			margin-bottom:20px;
+		}
+		table td{
+			padding:5px;
+		}
+		.btn {
+			float:right;
+		}
+		#infosection
+		{
+			margin-top:35px;
+			color:blue;
+		}
+		.optionWrap{
+			width: 100px;
+		}
+		#projectFilterContent
+		{
+			margin-top:10px;
+		}
+	</style>
+<script type="text/javascript">
+	var _token="";
+	var basicUrl="http://localhost:8084";
+	function checkifProjetInTheList(listProjectAdded,projectToAdd)
+	{
+		var findItem=false;
+		for(var indexProject=0;indexProject<listProjectAdded.length;indexProject++)
+		{
+			if(listProjectAdded[indexProject]==projectToAdd)
+			{
+				findItem=true;
+				break;
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return findItem;
+	}
+	function getAssociatedQuestionMapping(flowUUID,idQuestion)
+	{
+		var foundItem=null;
+		//console.log("idquestion:"+idQuestion);
+		for(var indexQuestion=0;indexQuestion<window.listQuestionMapping.length;indexQuestion++)
+		{
+			//console.log();
+			if(window.listQuestionMapping[indexQuestion].flowUuid==flowUUID)
+			{
+				//console.log('Found it!!');
+				var questionFound=false;
+				for(var i=0;i<listQuestionMapping[indexQuestion].questions.length;i++)
+				{
+					if(listQuestionMapping[indexQuestion].questions[i].id=idQuestion)
+					{
+						questionFound=true;
+						foundItem=listQuestionMapping[indexQuestion].questions[i];
+						break;
+					}
+					else
+					{
+						continue;
+					}
+				}
+				//foundItem=listQuestionMapping[indexQuestion];
+				//break;
+				if(questionFound)
+				{
+					break;
+				}
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return foundItem;
+	}
+	//Returns list of contactResponse that meet the parameters criteria
+	function getListAssociatedResponseWithContact(listResponses,flowUUID,questionId,response)
+	{
+		var listResponseWithContats=[];
+		for(var indexResponse=0;indexResponse<listResponses.length;indexResponse++)
+		{
+			if(listResponses[indexResponse].flowUUID==flowUUID && listResponses[indexResponse].questionId==questionId
+			&& listResponses[indexResponse].response==response)
+			{
+				listResponseWithContats.push(listResponses[indexResponse]);
+			}
+			//listResponseWithContats.push();
+		}
+		return listResponseWithContats;
+	}
+	function getListDistinctFlows(projectName)
+	{
+		listDisctinctFlowUUID=[];
+		for(var indexMappingQuestion=0;indexMappingQuestion<window.listProjectInformations.length;indexMappingQuestion++)
+		{
+			if(window.listProjectInformations[indexMappingQuestion].country==projectName)
+			{
+				if(listDisctinctFlowUUID.includes(window.listProjectInformations[indexMappingQuestion].flowUUID))
+				{
+					continue;
+				}
+				else{
+				listDisctinctFlowUUID.push(window.listProjectInformations[indexMappingQuestion].flowUUID);
+				}
+			}
+		}
+		return listDisctinctFlowUUID;
+	}
+	function getListDistinctQuestions(listCleanedResponses)
+	{
+		listDinstinctIndexQuestions=[];
+		listDinstinctQuestions=[];
+		for(var indexMappingQuestion=0;indexMappingQuestion<listCleanedResponses.length;indexMappingQuestion++)
+		{
+			var oCleanedResponse=listCleanedResponses[indexMappingQuestion];
+			if(listDinstinctIndexQuestions.includes(oCleanedResponse.questionId))
+			{
+				continue;
+			}
+			else
+			{
+				listDinstinctQuestions.push({questionId:oCleanedResponse.questionId,question:oCleanedResponse.question});
+				listDinstinctIndexQuestions.push(oCleanedResponse.questionId);
+			}
+		}
+		return listDinstinctQuestions;
+	}
+	function getListCleanedResponseByQuestion(questionId,listCleanedResponses)
+	{
+		listCleanedQuestions=[];
+		for(var indexMappingQuestion=0;indexMappingQuestion<listCleanedResponses.length;indexMappingQuestion++)
+		{
+			var oCleanedResponse=listCleanedResponses[indexMappingQuestion];
+			//console.log(oCleanedResponse.questionId+"||"+questionId);
+			if(oCleanedResponse.questionId==questionId)
+			{
+				listCleanedQuestions.push(oCleanedResponse);
+			}
+		}
+		return listCleanedQuestions;
+	}
+	var listQuestionMapping=[];
+	var listProjectInformations=[];
+	var listCleanedResponse=[];
+	$(window).on("load",function()
+	{
+		//console.log("---onload-----");
+		$('#projectContent').html('<h4> Loading project ....</h4>');
+		$.ajax({
+			url:window.basicUrl+ "/getallprojectinfo",
+			dataType: "json"
+		}).done(function(listProjectInfos) {
+			if(listProjectInfos.length>0)
+			{
+				window.listProjectInformations=listProjectInfos;
+				var projectAlreadyAdded=[];
+				$('#projectContent').html('<select  id="project_select" name="project_select" class="form-control"></select>');
+				$('#projectContent select').append('<option value="" class="optionWrap">Select a project dashboard</option>');
+				for(var indexProject=0;indexProject<listProjectInfos.length;indexProject++)
+				{
+					var oProjectInformation=listProjectInfos[indexProject];
+					var projectExist=checkifProjetInTheList(projectAlreadyAdded,oProjectInformation.country);
+					if(!projectExist)
+					{
+						$('#projectContent select').append('<option value="'+oProjectInformation.token+'">'+oProjectInformation.country+'</option>');
+						projectAlreadyAdded.push(oProjectInformation.country);
+					}
+					else
+					{
+						continue;
+					}
+					
+				}
+			}
+			else
+			{
+				$('#projectContent').html('<h4> No project dashboard has been created</h4>');
+			}
+			
+			})
+			return false;
+			
+	});
+	$(document).on('change', '#project_select', function() {
+		$('#responseMappingContent').html('<h4> Loading flows ....</h4>');
+		//var projectName=window._token=$('#project_select').text();
+		var selectedIndex=document.getElementById('project_select').selectedIndex;
+		if(selectedIndex>0)
+		{
+			var projectName=document.getElementById('project_select').options[selectedIndex].text;
+			//console.log(projectName);
+			var listFlowUUIDAssociated=getListDistinctFlows(projectName);
+			$.ajax({
+				url: window.basicUrl+"/getresponsesmapping",
+				data: {listFlowUUID:listFlowUUIDAssociated},
+				dataType: "json"
+			}).done(function(listMappingResponses) {
+				$('#responseMappingContent').html('');
+				if(listMappingResponses.length>0)
+				{
+					window.listCleanedResponse=listMappingResponses;
+					var listDisctinctQuestion=getListDistinctQuestions(listMappingResponses);
+					$('#projectFilterContent').html('<select  id="question_select" name="question_select" class="form-control"></select>');
+					$('#projectFilterContent select').append('<option value="">Select a question</option>');
+					for(var indexQuestion=0;indexQuestion<listDisctinctQuestion.length;indexQuestion++)
+					{
+						var oDistinctQuestion=listDisctinctQuestion[indexQuestion];
+						$('#projectFilterContent select').append('<option value="'+oDistinctQuestion.questionId+'">'+oDistinctQuestion.question+'</option>');
+					}
+					$('#projectFilterContent').append('<p style="font-size:14px"></p>');
+					
+				
+				}
+				//console.log("Enter cleanedresponse");
+				var listMappedQuestion=[];
+				//console.log(listMappingResponses);
+				
+				/*$("#chartBoard").CanvasJSChart({ 
+				title: { 
+					text: "Worldwide Smartphone sales by brand - 2012",
+					fontSize: 24
+				}, 
+				axisY: { 
+					title: "Products in %" 
+				}, 
+				legend :{ 
+					verticalAlign: "center", 
+					horizontalAlign: "right" 
+				}, 
+				data: [ 
+				{ 
+					type: "pie", 
+					showInLegend: true, 
+					toolTipContent: "{label} <br/> {y} %", 
+					indexLabel: "{y} %", 
+					dataPoints: [ 
+						{ label: "Samsung",  y: 30.3, legendText: "Samsung"}, 
+						{ label: "Apple",    y: 19.1, legendText: "Apple"  }, 
+						{ label: "Huawei",   y: 4.0,  legendText: "Huawei" }, 
+						{ label: "LG",       y: 3.8,  legendText: "LG Electronics"}, 
+						{ label: "Lenovo",   y: 3.2,  legendText: "Lenovo" }, 
+						{ label: "Others",   y: 39.6, legendText: "Others" } 
+					] 
+				} 
+				] 
+			});*/
+				
+				
+				});
+			
+			
+			//console.log(listFlowUUIDAssociated);
+		}
+		
+		return false;
+		
+	});
+	$(document).on('change', '#question_select', function() {
+		$('#projectFilterContent p').html('');
+		$('#responseMappingContent').html('');
+		var questionId=$('#question_select').val();
+		//console.log(window.listCleanedResponse);
+		if(questionId!="")
+		{
+			var listCleanedResponseByQuestion=getListCleanedResponseByQuestion(questionId,window.listCleanedResponse);
+			//console.log(listCleanedResponseByQuestion);
+			var selectedQuestion=$('#question_select option:selected').text();
+			$('#projectFilterContent p').html(selectedQuestion);
+			var stringTableHeader='<table id="tbMappingResponse"><thead><tr><th>contact ID</th><th>Date</th>';
+			stringTableHeader+='<th>'+listCleanedResponseByQuestion[0].questionLabel+'</th>'
+			$('#responseMappingContent').html(stringTableHeader);
+			for(var indexResponse=0;indexResponse<listCleanedResponseByQuestion.length;indexResponse++)
+			{
+				var oCleanedResponse=listCleanedResponseByQuestion[indexResponse];
+				var stringDataTable='<tr ruleId='+oCleanedResponse.responseId+' ><td >' + oCleanedResponse.contactId + '</td>';
+				stringDataTable+='<td >' + oCleanedResponse.time + '</td>';
+				stringDataTable+='<td >' + oCleanedResponse.response+ '</td>';
+				stringDataTable+='</tr>';
+				console.log(stringDataTable);
+				$('#responseMappingContent table').append(stringDataTable);
+			}
+			$('#chartBoard').html('');
+			$('#chartBoardCommand').html('');
+			$('#chartBoardCommand').append('<select  id="chartTypeSelect" name="chartTypeSelect" class="form-control">'+
+					'<option value="">Select a chart type</option>'+
+					'<option value="pie">Pie chart</option>'+
+					'<option value="column">column</option></select>');
+			$('#chartBoardCommand').append('<button type="submit" class="btn btn-default" id="buttonDisplayChart">Display</button>');
+			
+		}
+		
+		return false;
+	});
+	function getIndexDataElementInTheList(listDataElement,oElement)
+	{
+		var foundIndex=-1;
+		for(var index=0;index<listDataElement.length;index++)
+		{
+			if(listDataElement[index].label==oElement.label && listDataElement[index].value==oElement.value)
+			{
+				foundIndex=index;
+				break;
+			}
+		}
+		return foundIndex;
+	}
+	function getTotalCountCategory(listDataElement)
+	{
+		var total=0;
+		for(var indexData=0;indexData<listDataElement.length;indexData++)
+		{
+			total+=listDataElement[indexData].count;
+		}
+		return total;
+	}
+	$(document).on('change', '#chartTypeSelect', function() {
+		$('#chartBoard').html('');
+		
+	});
+	$(document).on('click', '#buttonDisplayChart', function() {
+		var selectedQuestion=$('#question_select option:selected').text();
+		var selectedIndex=document.getElementById('chartTypeSelect').selectedIndex;
+		if(selectedIndex>0)
+		{
+			var charType=$('#chartTypeSelect').val();
+			//console.log(charType);
+			var rowsHeader=$('#tbMappingResponse > thead > tr');
+			var headerElement=rowsHeader[0].getElementsByTagName('th');
+			var questionLabel=headerElement[2].textContent;
+			var rows=$('#tbMappingResponse > tbody > tr');
+			
+			//console.log(rows[0]);
+			var listDataElement=[];
+			for(var indexRow=0;indexRow<rows.length;indexRow++)
+			{
+				var element= rows[indexRow].getElementsByTagName('td');
+				var oDataElement={label:questionLabel,value:element[2].textContent,count:1};
+				var indexFound=getIndexDataElementInTheList(listDataElement,oDataElement);
+				if(indexFound<0)
+				{
+					listDataElement.push(oDataElement);
+				}
+				else
+				{
+					listDataElement[indexFound].count=listDataElement[indexFound].count+1;
+				}
+				
+			}//end for Rows
+			//console.log(listDataElement);
+			var textTitle=listDataElement[0].label;
+			if(charType=="pie")
+			{
+				var totalCount=getTotalCountCategory(listDataElement);
+			
+				
+				
+				var _dataPoints=[];
+				
+				for(var  indexDataPoint=0;indexDataPoint<listDataElement.length;indexDataPoint++)
+				{
+					_dataPoints.push({label:listDataElement[indexDataPoint].value,y:((listDataElement[indexDataPoint].count)/totalCount)*100,
+						legendText:listDataElement[indexDataPoint].value});
+				}
+				//console.log(_dataPoints);
+				
+				$("#chartBoard").CanvasJSChart({ 
+					title: { 
+						text: textTitle,
+						fontSize: 24
+					}, 
+					axisY: { 
+						title: "responses in %" 
+					}, 
+					legend :{ 
+						verticalAlign: "center", 
+						horizontalAlign: "right" 
+					}, 
+					data: [ 
+					{ 
+						type: "pie", 
+						showInLegend: true, 
+						toolTipContent: "{label} <br/> {y} %", 
+						indexLabel: "{y} %", 
+						dataPoints: _dataPoints
+					} 
+					] 
+				})
+		
+			}//end if pie
+			else if(charType=="column")
+			{
+				var _dataPoints=[];
+				
+				for(var  indexDataPoint=0;indexDataPoint<listDataElement.length;indexDataPoint++)
+				{
+					_dataPoints.push({y:listDataElement[indexDataPoint].count,label:listDataElement[indexDataPoint].value});
+				}
+				console.log(_dataPoints);
+				
+				var chart = new CanvasJS.Chart("chartBoard", {
+					animationEnabled: true,
+					theme: "light2", // "light1", "light2", "dark1", "dark2"
+					title:{
+						text: textTitle
+					},
+					axisY: {
+						title: "Number of responses"
+					},
+					data: [{        
+					type: "column",  
+					showInLegend: true, 
+					legendMarkerColor: "grey",
+					legendText: "Number of responses"+"/"+textTitle,
+					dataPoints: _dataPoints}]
+				});
+				chart.render();
+			}
+		}
+		return false;
+	});
+</script>
+</head>
+<body class="container">
+	<header>
+		<nav class="navbar navbar-default" role="navigation">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					
+				</div>
+				<ul class="nav navbar-nav">
+					<li <% if (menu==="main") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					>
+					<a href="/index">Create dashboard</a></li>
+					<li <% if (menu==="mapping") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					><a href="/mapping">Responses mappings</a></li>
+					<li <% if (menu==="view") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					><a href="/view">View data</a></li>
+					<li><a href="/logout">Logout</a></li>
+				</ul>
+			 </div>
+	</nav>
+	</header>
+	<div id="logout_box">
+		<!--<a href="/logout">Logout</a>-->
+	</div>
+<main>
+	<div id="pageTitle">
+	<h3>Responses mapping</h3>
+	</div>
+    <div class="jumbotron">
+		<form action="" method="">
+			
+			<!--<br><br>-->
+			<p>
+				<!--<button type="submit" class="btn btn-default" id="buttonLoadFlow">Load flows</button>-->
+			</p>
+			<div id="projectContent"></div>
+			<div id="projectFilterContent"></div>
+			<div id="responseMappingContent"></div>
+			<div id="chartBoardCommand"></div>
+			
+			<div id="infosection"></div>
+		</form>
+    </div>
+</main>
+<div id="chartBoard"></div>
+<footer>
+    
+</footer>
+
+</body>
+</html>

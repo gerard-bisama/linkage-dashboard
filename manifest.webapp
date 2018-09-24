@@ -1,0 +1,21 @@
+{
+  "launch_path": "app.js",
+  "default_locale": "en",
+  "rapidProDataSource":[ {
+      "apiurl": "http://IP:PORT/api/v2",
+      "token": "XXXXXXXXX",
+      "country":"Country"
+    }
+  ],
+  "administrator":{
+      "username":"username",
+      "password":"password"
+  },
+  "appType": "APP",
+  "name": "linkage-dashboard",
+  "version": "1.0.0",
+  "description": "App to process data from rapidpro/excel like survey and to display a standardized dashboard",
+  "developer": {
+    "name": "Gerard Bisama"
+  }
+}

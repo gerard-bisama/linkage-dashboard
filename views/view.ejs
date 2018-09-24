@@ -1,0 +1,435 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+	<title>Linkages Dashboard</title>
+
+	<!-- CSS (load bootstrap from a CDN) -->
+	<script src="/js/jquery-2.0.3.min.js"> </script>
+	<script type="text/javascript" src="https://canvasjs.com/assets/script/jquery-1.11.1.min.js"></script> 
+	<script type="text/javascript" src="https://canvasjs.com/assets/script/jquery.canvasjs.min.js"></script> 
+	<link rel="stylesheet" href="/css/bootstrap.min.css">
+	<link rel="stylesheet" href="/css/bootstrap-theme.css">
+	<script src="/js/bootstrap.min.js"> </script>
+	<link rel="stylesheet" href="/css/lmisstyle.css">
+	
+	<style>
+		#logout_box {
+		  float:right;
+		  margin-right: 14px;
+		  margin-top: 13px;
+		}
+		#buttonLoadFlow {
+		  float:right;
+		  margin-right: 14px;
+		}
+		body    { padding-top:50px; }
+		.form-control
+		{
+			width:80%;
+		}
+		#pageTitle
+		{
+			text-align:center;
+		}
+		.container {
+			/*width: 553px;*/
+			width: 80%;
+		}
+		table {
+			border-collapse: collapse;
+			margin-bottom:5px;
+
+		}
+
+		table, th, td {
+			border: 1px solid black;
+		}
+		#flowQuestionContent{
+			margin-top:20px;
+			margin-bottom:20px;
+		}
+		#responseMappingContent{
+			margin-top:20px;
+			margin-bottom:20px;
+		}
+		table td{
+			padding:5px;
+		}
+		.btn {
+			float:right;
+		}
+		#infosection
+		{
+			margin-top:35px;
+			color:blue;
+		}
+	</style>
+<script type="text/javascript">
+	var _token="";
+	var basicUrl="http://52.208.62.172:8084";
+	function checkifProjetInTheList(listProjectAdded,projectToAdd)
+	{
+		var findItem=false;
+		for(var indexProject=0;indexProject<listProjectAdded.length;indexProject++)
+		{
+			if(listProjectAdded[indexProject]==projectToAdd)
+			{
+				findItem=true;
+				break;
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return findItem;
+	}
+	function getAssociatedQuestionMapping(flowUUID,idQuestion)
+	{
+		var foundItem=null;
+		//console.log("idquestion:"+idQuestion);
+		for(var indexQuestion=0;indexQuestion<window.listQuestionMapping.length;indexQuestion++)
+		{
+			//console.log();
+			if(window.listQuestionMapping[indexQuestion].flowUuid==flowUUID)
+			{
+				//console.log('Found it!!');
+				var questionFound=false;
+				for(var i=0;i<listQuestionMapping[indexQuestion].questions.length;i++)
+				{
+					if(listQuestionMapping[indexQuestion].questions[i].id=idQuestion)
+					{
+						questionFound=true;
+						foundItem=listQuestionMapping[indexQuestion].questions[i];
+						break;
+					}
+					else
+					{
+						continue;
+					}
+				}
+				//foundItem=listQuestionMapping[indexQuestion];
+				//break;
+				if(questionFound)
+				{
+					break;
+				}
+			}
+			else
+			{
+				continue;
+			}
+		}
+		return foundItem;
+	}
+	//Returns list of contactResponse that meet the parameters criteria
+	function getListAssociatedResponseWithContact(listResponses,flowUUID,questionId,response)
+	{
+		var listResponseWithContats=[];
+		for(var indexResponse=0;indexResponse<listResponses.length;indexResponse++)
+		{
+			if(listResponses[indexResponse].flowUUID==flowUUID && listResponses[indexResponse].questionId==questionId
+			&& listResponses[indexResponse].response==response)
+			{
+				listResponseWithContats.push(listResponses[indexResponse]);
+			}
+			//listResponseWithContats.push();
+		}
+		return listResponseWithContats;
+	}
+	function getListDistinctFlows(projectName)
+	{
+		listDisctinctFlowUUID=[];
+		for(var indexMappingQuestion=0;indexMappingQuestion<window.listQuestionMapping.length;indexMappingQuestion++)
+		{
+			if(window.listQuestionMapping[indexMappingQuestion].country==projectName)
+			{
+				if(listDisctinctFlowUUID.includes(window.listQuestionMapping[indexMappingQuestion].flowUuid))
+				{
+					continue;
+				}
+				else{
+				listDisctinctFlowUUID.push(window.listQuestionMapping[indexMappingQuestion].flowUuid);
+				}
+			}
+		}
+		return listDisctinctFlowUUID;
+	}
+	var listQuestionMapping=[];
+	$(window).on("load",function()
+	{
+		//console.log("---onload-----");
+		$('#projectContent').html('<h4> Loading project ....</h4>');
+		$.ajax({
+			url:window.basicUrl+ "/getallmappingquestion",
+			dataType: "json"
+		}).done(function(questionsMapping) {
+			if(questionsMapping.length>0)
+			{
+				window.listQuestionMapping=questionsMapping;
+				var projectAlreadyAdded=[];
+				$('#projectContent').html('<select  id="project_select" name="project_select" class="form-control"></select>');
+				$('#projectContent select').append('<option value="">Select a project dashboard</option>');
+				for(var indexQtMapping=0;indexQtMapping<questionsMapping.length;indexQtMapping++)
+				{
+					var oQuestionMapping=questionsMapping[indexQtMapping];
+					var projectExist=checkifProjetInTheList(projectAlreadyAdded,oQuestionMapping.country);
+					if(!projectExist)
+					{
+						$('#projectContent select').append('<option value="'+oQuestionMapping.token+'">'+oQuestionMapping.country+'</option>');
+						projectAlreadyAdded.push(oQuestionMapping.country);
+					}
+					else
+					{
+						continue;
+					}
+					
+				}
+			}
+			else
+			{
+				$('#projectContent').html('<h4> No project dashboard has been created</h4>');
+			}
+			
+			})
+			return false;
+			
+	});
+	$(document).on('change', '#project_select', function() {
+		$('#responseMappingContent').html('<h4> Loading flows ....</h4>');
+		//var projectName=window._token=$('#project_select').text();
+		var selectedIndex=document.getElementById('project_select').selectedIndex;
+		if(selectedIndex>0)
+		{
+			var projectName=document.getElementById('project_select').options[selectedIndex].text;
+			//console.log(projectName);
+			var listFlowUUIDAssociated=getListDistinctFlows(projectName);
+			$.ajax({
+				url: window.basicUrl+"/getresponsesmapping",
+				data: {listFlowUUID:listFlowUUIDAssociated},
+				dataType: "json"
+			}).done(function(listMappingResponses) {
+				console.log(listMappingResponses);
+				$('#responseMappingContent').html('<table id="tbMappingResponse" ><thead><tr><th>Contact Id</th><th>question</th><th>response</th><th>std Question<th>std response</th></tr></table>');
+				
+				for(var indexResponse=0;indexResponse<listMappingResponses.length;indexResponse++)
+				{
+					var oMappingResponse=listMappingResponses[indexResponse];
+					var stringDataTable='<tr questionId='+oMappingResponse.questionId+' flowUUID='+oMappingResponse.flowUuid+'><td>' + oMappingResponse.contactId + '</td>';
+					stringDataTable+='<td>' + oMappingResponse.question + '</td>';
+					stringDataTable+='<td>' + oMappingResponse.response + '</td>';
+					stringDataTable+='<td>' + oMappingResponse.stdQuestion + '</td>';
+					stringDataTable+='<td>' + oMappingResponse.stdResponse + '</td>';
+					$('#responseMappingContent table').append(stringDataTable);
+				}
+				
+				//$('#responseMappingContent').append('<button type="submit" class="btn btn-default" id="buttonDisplayChart">Map questions</button>');
+				$('#chartBoard').html('');
+				$('#chartBoardCommand').append('<select  id="chartTypeSelect" name="chartTypeSelect" class="form-control">'+
+					'<option value="">Select a chart type</option>'+
+					'<option value="pie">Pie chart</option></select>');
+				$('#chartBoardCommand').append('<button type="submit" class="btn btn-default" id="buttonDisplayChart">Display</button>');
+				/*$("#chartBoard").CanvasJSChart({ 
+				title: { 
+					text: "Worldwide Smartphone sales by brand - 2012",
+					fontSize: 24
+				}, 
+				axisY: { 
+					title: "Products in %" 
+				}, 
+				legend :{ 
+					verticalAlign: "center", 
+					horizontalAlign: "right" 
+				}, 
+				data: [ 
+				{ 
+					type: "pie", 
+					showInLegend: true, 
+					toolTipContent: "{label} <br/> {y} %", 
+					indexLabel: "{y} %", 
+					dataPoints: [ 
+						{ label: "Samsung",  y: 30.3, legendText: "Samsung"}, 
+						{ label: "Apple",    y: 19.1, legendText: "Apple"  }, 
+						{ label: "Huawei",   y: 4.0,  legendText: "Huawei" }, 
+						{ label: "LG",       y: 3.8,  legendText: "LG Electronics"}, 
+						{ label: "Lenovo",   y: 3.2,  legendText: "Lenovo" }, 
+						{ label: "Others",   y: 39.6, legendText: "Others" } 
+					] 
+				} 
+				] 
+			});*/
+				
+				
+				});
+			
+			
+			//console.log(listFlowUUIDAssociated);
+		}
+		
+		return false;
+		
+	});
+	function getIndexDataElementInTheList(listDataElement,oElement)
+	{
+		var foundIndex=-1;
+		for(var index=0;index<listDataElement.length;index++)
+		{
+			if(listDataElement[index].label==oElement.label && listDataElement[index].value==oElement.value)
+			{
+				foundIndex=index;
+				break;
+			}
+		}
+		return foundIndex;
+	}
+	$(document).on('change', '#chartTypeSelect', function() {
+		
+		
+	});
+	$(document).on('click', '#buttonDisplayChart', function() {
+		var selectedIndex=document.getElementById('chartTypeSelect').selectedIndex;
+		if(selectedIndex>0)
+		{
+			var charType=$('#chartTypeSelect').val();
+			//console.log(charType);
+			var rows=$('#tbMappingResponse > tbody > tr');
+			//console.log(rows[0]);
+			var listDataElement=[];
+			for(var indexRow=0;indexRow<rows.length;indexRow++)
+			{
+				var element= rows[indexRow].getElementsByTagName('td');
+				var oDataElement={label:element[3].textContent,value:element[4].textContent,count:1};
+				var indexFound=getIndexDataElementInTheList(listDataElement,oDataElement);
+				if(indexFound<0)
+				{
+					listDataElement.push(oDataElement);
+				}
+				else
+				{
+					listDataElement[indexFound].count=listDataElement[indexFound].count+1;
+				}
+				
+			}//end for Rows
+			//console.log(listDataElement);
+			var alreadyDisplayed=[];
+			for(var indexPoint=0;indexPoint<listDataElement.length;indexPoint++)
+			{
+				
+				var labeltoSearch=listDataElement[indexPoint].label;
+				if(alreadyDisplayed.includes(labeltoSearch))
+				{
+					continue;
+				}
+				else
+				{
+					//now search all label in the list
+					var totalCount=0;
+					var dataPointList=[];
+					for(var indexDataElelement=0;indexDataElelement<listDataElement.length;indexDataElelement++)
+					{
+						if(listDataElement[indexDataElelement].label==labeltoSearch)
+						{
+							totalCount+=listDataElement[indexDataElelement].count;
+							dataPointList.push(listDataElement[indexDataElelement]);
+						}
+						
+					}//end for build DataPointList
+					var _dataPoints=[];
+					for(var  indexDataPoint=0;indexDataPoint<dataPointList.length;indexDataPoint++)
+					{
+						_dataPoints.push({label:dataPointList[indexDataPoint].value,y:((dataPointList[indexDataPoint].count)/totalCount)*100,
+							legendText:dataPointList[indexDataPoint].value})
+					}
+					$("#chartBoard").CanvasJSChart({ 
+						title: { 
+							text: labeltoSearch,
+							fontSize: 24
+						}, 
+						axisY: { 
+							title: "responses in %" 
+						}, 
+						legend :{ 
+							verticalAlign: "center", 
+							horizontalAlign: "right" 
+						}, 
+						data: [ 
+						{ 
+							type: "pie", 
+							showInLegend: true, 
+							toolTipContent: "{label} <br/> {y} %", 
+							indexLabel: "{y} %", 
+							dataPoints: _dataPoints
+						} 
+						] 
+				})
+		
+				}//end else
+				
+			}//End for dataelement search
+			//var oDataPointList=listDataElement[0];
+		}
+		return false;
+	});
+</script>
+</head>
+<body class="container">
+	<header>
+		<nav class="navbar navbar-default" role="navigation">
+			<div class="container-fluid">
+				<div class="navbar-header">
+					
+				</div>
+				<ul class="nav navbar-nav">
+					<li <% if (menu==="main") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					>
+					<a href="/index">Create dashboard</a></li>
+					<li <% if (menu==="mapping") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					><a href="/mapping">Responses mappings</a></li>
+					<li <% if (menu==="view") {%>
+						class="active"
+						<%} else {%>
+						class=""
+						<%}%>
+					><a href="/view">View data</a></li>
+					<li><a href="/logout">Logout</a></li>
+				</ul>
+			 </div>
+	</nav>
+	</header>
+	<div id="logout_box">
+		<!--<a href="/logout">Logout</a>-->
+	</div>
+<main>
+	<div id="pageTitle">
+	<h3>Responses mapping</h3>
+	</div>
+    <div class="jumbotron">
+		<form action="" method="">
+			
+			<!--<br><br>-->
+			<p>
+				<!--<button type="submit" class="btn btn-default" id="buttonLoadFlow">Load flows</button>-->
+			</p>
+			<div id="projectContent"></div>
+			<div id="responseMappingContent"></div>
+			<div id="chartBoardCommand"></div>
+			
+			<div id="infosection"></div>
+		</form>
+    </div>
+</main>
+<div id="chartBoard"></div>
+<footer>
+    
+</footer>
+
+</body>
+</html>
