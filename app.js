@@ -64,7 +64,7 @@
 	{
 		var username=req.body.username;
 		var password=req.body.password;
-		console.log(oAPI.getAdministrator().username);
+		//console.log(oAPI.getAdministrator().username);
 		if(password=="" || username=="")
 		{
 			res.render('login',{error:"Invalid credentials"});
@@ -257,7 +257,8 @@
 	{
 		var listQuestionDefinition=req.query.listQuestionDefinitions;
 		var projectInformation=req.query.projectInformation;
-		oAPI.saveFlowQuestionDefinition(listQuestionDefinition,function(resOP)
+		//oAPI.saveFlowQuestionDefinition(listQuestionDefinition,function(resOP)
+		oAPI.upsertFlowQuestionDefinition(listQuestionDefinition,function(resOP)
 		{
 			if(resOP==true)
 			{

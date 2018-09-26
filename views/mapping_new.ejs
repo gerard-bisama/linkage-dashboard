@@ -332,8 +332,11 @@
 	$(document).on('click', '#buttonMapResponse', function() {
 		
 		var rows=$('#tbMappingResponse > tbody > tr');
+		$('#infosection').html('');
+		$('#infosection').html('Processing in progress, please wait');
+		$("#buttonMapResponse").prop("disabled",true);
 		var listMappedResponseRules=[];
-		console.log(rows[0]);
+		//console.log(rows[0]);
 		for(var indexRow=0;indexRow<rows.length;indexRow++)
 		{
 			var indexResponse=rows[indexRow].getAttribute("indexResponse");
@@ -355,6 +358,7 @@
 		/*console.log(listMappedResponseRules);
 		console.log('------------------checked question title-------------------');
 		*/
+		console.log(window._token+"|"+_flowUUID);
 		if(listMappedResponseRules.length>0)
 		{
 			_flowUUID=$('#flow_select').val();
@@ -400,14 +404,23 @@
 						}).done(function(res) {
 							if(res==true)
 							{
-								$('#infosection').html('<span>Success: mapping of responses created!</span>');
+								$('#infosection').html('<span >Success: mapping of responses created!</span>');
 							}
 							else
 							{
-								$('#infosection').html('<span>Warning: Failed to create the mapping of response!</span>');
+								$('#infosection').html('<span style="color:red;">Warning: Failed to create the mapping of response!</span>');
 							}
+							$("#buttonMapResponse").prop("disabled",false);
+						}).fail(function(res)
+						{
+							$('#infosection').html('<span style="color:red;">Failed to create the mapping of response!</span>');
+							$("#buttonMapResponse").prop("disabled",false);
 						});//end of done saveresponsemapping
 				}
+			}).fail(function(res)
+			{
+				$('#infosection').html('<span style="color:red;">Failed to request questions of response!</span>');
+				$("#buttonMapResponse").prop("disabled",false);
 			});//end of done
 		}
 		return false

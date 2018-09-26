@@ -136,6 +136,7 @@
 		$('#infosection').html('');
 		window.token=$('#source_select').val();
 		//console.log($('#source_select').val());
+		
 		$.ajax({
 			url: window.basicUrl+"/listflows",
 			data: {
@@ -208,6 +209,7 @@
 	});
 	$(document).on('click', '#buttonMapHeader', function() {
 		$('#infosection').html('');
+		$('#infosection').html('Processing in progress, please wait');
 		var rows=$('#tbMappingQuestion > tbody > tr');
 		var country=$('#source_select option:selected').text();
 		var flowUUID=$('#flow_select').val();
@@ -215,6 +217,7 @@
 		var token=$('#source_select').val();
 		//console.log(country);
 		var listFlowQuestionDefinitions=[];
+		$("#buttonMapHeader").prop("disabled",true);
 		for(var indexRow=0;indexRow<rows.length;indexRow++)
 		{
 			var oRows=rows[indexRow];
@@ -258,10 +261,14 @@
 				}
 				else
 				{
-					$('#infosection').html('<span>Warning: Failed to clean question headers!</span>');
+					$('#infosection').html('<span style="color:red;">Warning: Failed to clean question headers!</span>');
 				}
-				
-		})
+				$("#buttonMapHeader").prop("disabled",false);
+		}).fail(function(res)
+		{
+			$('#infosection').html('<span style="color:red;">Warning: Failed to clean question headers!</span>');
+			$("#buttonMapHeader").prop("disabled",false);
+		});
 		}
 		
 		
